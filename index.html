@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phản ứng hóa học & Thí nghiệm trực quan | 10 trang</title>
+  <style>
+    :root {
+      --bg1: #0a0f1e;
+      --bg2: #10182a;
+      --panel: rgba(25, 35, 65, 0.7);
+      --border: rgba(94, 234, 212, 0.25);
+      --text: #e6f1ff;
+      --text2: #9fb3c8;
+      --cyan: #22d3ee;
+      --teal: #5eead4;
+      --violet: #a78bfa;
+      --orange: #fb923c;
+      --pink: #f472b6;
+      --green: #34d399;
+      --red: #f87171;
+      --font: "Segoe UI", "Inter", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: var(--font);
+      background: radial-gradient(circle at 20% 10%, rgba(34, 211, 238, 0.12), transparent 40%),
+                  radial-gradient(circle at 80% 80%, rgba(167, 139, 250, 0.14), transparent 45%),
+                  linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 100%);
+      color: var(--text);
+    }
+    canvas#particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; background: rgba(94, 234, 212, 0.15); z-index: 40; }
+    .progress__bar { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--teal), var(--violet)); width: 10%; transition: width .6s cubic-bezier(.22,1,.36,1); box-shadow: 0 0 18px rgba(94, 234, 212, 0.6); }
+    .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 30; display: flex; justify-content: space-between; padding: 16px clamp(20px,4vw,60px); align-items: center; pointer-events: none; }
+    .topbar > * { pointer-events: auto; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--teal); font-size: .7rem; letter-spacing: .28em; text-transform: uppercase; }
+    .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 0 rgba(34, 211, 238, .6); animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, .5); } 70% { box-shadow: 0 0 0 10px rgba(34, 211, 238, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); } }
+    .ghost-btn { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border); background: rgba(16, 24, 42, .7); color: var(--text); font-size: .75rem; display: flex; gap: 8px; align-items: center; cursor: pointer; backdrop-filter: blur(12px); }
+    .slides { position: relative; z-index: 2; height: 100%; }
+    .slide { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 90px clamp(24px,6vw,90px) 110px; opacity: 0; visibility: hidden; pointer-events: none; overflow-y: auto; transition: opacity .6s ease, visibility .6s ease; }
+    .slide.active { opacity: 1; visibility: visible; pointer-events: auto; }
+    .content { width: min(1200px, 100%); display: grid; gap: clamp(24px,4vw,48px); align-items: center; }
+    .hero { grid-template-columns: minmax(0,1.1fr) minmax(320px,.9fr); }
+    .split { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .center { text-align: center; justify-items: center; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 10px; color: var(--cyan); font-size: .72rem; letter-spacing: .24em; text-transform: uppercase; margin-bottom: 14px; }
+    .eyebrow::before { content: ""; width: 32px; height: 1px; background: linear-gradient(90deg, transparent, var(--cyan)); }
+    .title-hero { font-size: clamp(2.8rem, 8vw, 6rem); line-height: .9; letter-spacing: -.04em; margin-bottom: 12px; }
+    .title-hero span { background: linear-gradient(90deg, var(--teal), var(--cyan), var(--violet)); -webkit-background-clip: text; color: transparent; }
+    .lead { color: var(--text2); font-size: clamp(1rem,1.4vw,1.2rem); max-width: 680px; line-height: 1.8; }
+    .tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .tag { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border); background: rgba(16, 24, 42, .6); font-size: .8rem; }
+    .btn { margin-top: 30px; display: inline-flex; align-items: center; gap: 10px; padding: 14px 26px; border-radius: 999px; border: 0; background: linear-gradient(90deg, var(--cyan), var(--teal)); color: #04111f; font-weight: 700; cursor: pointer; box-shadow: 0 20px 40px rgba(34, 211, 238, .25); }
+    .panel { position: relative; padding: clamp(22px,3vw,32px); border-radius: 24px; border: 1px solid var(--border); background: radial-gradient(circle at top, rgba(94, 234, 212, .12), transparent 60%), var(--panel); backdrop-filter: blur(18px); overflow: hidden; }
+    .panel::after { content: ""; position: absolute; inset: 0; background: radial-gradient(400px circle at var(--mx,50%) var(--my,50%), rgba(34, 211, 238, .14), transparent 70%); opacity: 0; transition: opacity .4s; pointer-events: none; }
+    .panel:hover::after { opacity: 1; }
+    .panel > * { position: relative; z-index: 1; }
+    .list { display: grid; gap: 12px; }
+    .item { display: flex; gap: 14px; align-items: flex-start; padding: 14px 18px; border-radius: 16px; border: 1px solid transparent; transition: all .4s; }
+    .item:hover { border-color: var(--border); background: rgba(34, 211, 238, .08); transform: translateX(6px); }
+    .num { color: var(--teal); font-weight: 700; }
+    .lab { position: relative; height: 420px; display: grid; place-items: center; }
+    .beaker { position: relative; width: 200px; height: 280px; border: 3px solid rgba(148, 163, 184, .6); border-top: none; border-radius: 0 0 24px 24px; overflow: hidden; }
+    .liquid { position: absolute; bottom: 0; left: 0; right: 0; height: 40%; background: linear-gradient(180deg, rgba(52, 211, 153, .9), rgba(16, 185, 129, .8)); animation: fill 4s ease-in-out infinite alternate; }
+    @keyframes fill { from { height: 35%; } to { height: 55%; } }
+    .bubbles { position: absolute; inset: 0; }
+    .bubble { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.9), transparent); bottom: -20px; animation: rise 3s linear infinite; opacity: 0; }
+    .bubble:nth-child(1){ left: 30%; animation-delay: 0s; }
+    .bubble:nth-child(2){ left: 50%; animation-delay: .6s; }
+    .bubble:nth-child(3){ left: 70%; animation-delay: 1.2s; }
+    @keyframes rise { 0% { transform: translateY(0) scale(.4); opacity: 0; } 20% { opacity: .8; } 80% { opacity: .4; } 100% { transform: translateY(-220px) scale(1); opacity: 0; } }
+    .molecules { position: absolute; width: 100%; height: 100%; }
+    .mol { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle, var(--cyan), transparent); filter: blur(1px); animation: orbit 6s linear infinite; }
+    .mol:nth-child(1){ top: 20%; left: 20%; }
+    .mol:nth-child(2){ top: 30%; right: 25%; animation-delay: -2s; }
+    .mol:nth-child(3){ bottom: 25%; left: 40%; animation-delay: -4s; }
+    @keyframes orbit { 0% { transform: rotate(0deg) translateX(40px) rotate(0deg); } 100% { transform: rotate(360deg) translateX(40px) rotate(-360deg); } }
+    .hud { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--border); background: rgba(16, 24, 42, .8); backdrop-filter: blur(16px); z-index: 40; }
+    .nav { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; display: grid; place-items: center; }
+    .dots { display: flex; gap: 6px; align-items: center; padding: 0 10px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(148, 163, 184, .5); border: none; cursor: pointer; }
+    .dot.active { width: 24px; border-radius: 999px; background: linear-gradient(90deg, var(--cyan), var(--teal)); }
+    .counter { color: var(--text2); font-size: .8rem; min-width: 60px; text-align: center; }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  <div class="progress"><div class="progress__bar" id="bar"></div></div>
+  <header class="topbar">
+    <div class="brand"><span class="brand-dot"></span><span>HÓA HỌC · THÍ NGHIỆM TRỰC QUAN</span></div>
+    <button class="ghost-btn" onclick="toggleFS()">⛶ Toàn màn hình</button>
+  </header>
+  <main class="slides" id="slides">
+    <section class="slide active">
+      <div class="content hero">
+        <div>
+          <div class="eyebrow">Bài thuyết trình</div>
+          <h1 class="title-hero">PHẢN ỨNG HÓA HỌC<br><span>& THÍ NGHIỆM</span></h1>
+          <p class="lead">Khám phá thế giới nguyên tử, phân tử qua những thí nghiệm đơn giản, sinh động với hình ảnh trực quan và hiệu ứng animation.</p>
+          <div class="tags">
+            <span class="tag">Phản ứng hóa học</span>
+            <span class="tag">Nguyên tố & Hợp chất</span>
+            <span class="tag">Thí nghiệm an toàn</span>
+            <span class="tag">Quan sát trực quan</span>
+          </div>
+          <button class="btn" onclick="go(1)">Bắt đầu khám phá →</button>
+        </div>
+        <div class="panel lab">
+          <div class="beaker">
+            <div class="liquid"></div>
+            <div class="bubbles">
+              <span class="bubble"></span><span class="bubble"></span><span class="bubble"></span>
+            </div>
+          </div>
+          <div class="molecules">
+            <span class="mol"></span><span class="mol"></span><span class="mol"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="content split">
+        <div class="panel">
+          <div class="eyebrow">TRANG 1</div>
+          <h2 style="font-size:clamp(1.8rem,4vw,3rem);margin-bottom:16px">Khái niệm phản ứng hóa học</h2>
+          <p class="lead" style="margin-bottom:24px">Phản ứng hóa học là quá trình biến đổi từ chất này thành chất khác, có sự phá vỡ và hình thành liên kết hóa học.</p>
+          <div class="list">
+            <div class="item"><span class="num">01</span><div><strong>Biến đổi chất</strong><br><span style="color:var(--text2)">Xuất hiện chất mới có tính chất khác hẳn</span></div></div>
+            <div class="item"><span class="num">02</span><div><strong>Có sự thay đổi năng lượng</strong><br><span style="color:var(--text2)">Tỏa nhiệt hoặc thu nhiệt</span></div></div>
+            <div class="item"><span class="num">03</span><div><strong>Không tạo/hủy nguyên tử</strong><br><span style="color:var(--text2)">Chỉ sắp xếp lại nguyên tử</span></div></div>
+          </div>
+        </div>
+        <div class="panel" style="display:grid;place-items:center">
+          <svg width="320" height="320" viewBox="0 0 200 200">
+            <circle cx="60" cy="100" r="18" fill="var(--cyan)" opacity=".8"><animate attributeName="cx" values="60;140;60" dur="4s" repeatCount="indefinite"/></circle>
+            <circle cx="140" cy="100" r="18" fill="var(--violet)" opacity=".8"><animate attributeName="cx" values="140;60;140" dur="4s" repeatCount="indefinite"/></circle>
+            <circle cx="100" cy="100" r="22" fill="var(--teal)" opacity="0"><animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite"/></circle>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="content center">
+        <div>
+          <div class="eyebrow">TRANG 2</div>
+          <h2 style="font-size:clamp(1.8rem,4vw,3rem);margin-bottom:12px">Thí nghiệm 1: Phản ứng giữa axit và đá vôi</h2>
+          <p class="lead" style="margin:0 auto">CaCO<sub>3</sub> + 2HCl → CaCl<sub>2</sub> + CO<sub>2</sub>↑ + H<sub>2</sub>O</p>
+        </div>
+        <div class="panel" style="width:min(900px,100%);height:420px;display:flex;align-items:flex-end;justify-content:center;gap:60px;padding-bottom:40px">
+          <div style="position:relative">
+            <div style="width:80px;height:120px;border:3px solid rgba(148,163,184,.6);border-top:none;border-radius:0 0 12px 12px;overflow:hidden">
+              <div style="position:absolute;bottom:0;width:100%;height:30%;background:rgba(251,146,60,.6)"></div>
+              <div style="position:absolute;bottom:30%;width:100%;height:40px;background:rgba(203,213,225,.4)"></div>
+            </div>
+            <p style="text-align:center;margin-top:10px;color:var(--text2)">Đá vôi + HCl</p>
+          </div>
+          <div style="position:relative">
+            <div style="width:60px;height:200px;border:3px solid rgba(148,163,184,.6);border-top:none;border-radius:0 0 16px 16px;overflow:hidden;position:relative">
+              <div style="position:absolute;bottom:0;width:100%;height:70%;background:rgba(148,163,184,.3)"></div>
+              <div class="bubbles" style="height:100%"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></div>
+            </div>
+            <p style="text-align:center;margin-top:10px;color:var(--text2)">Sủi bọt CO<sub>2</sub></p>
+          </div>
+        </div>
+        <p class="lead" style="margin:0 auto">Quan sát: Có bọt khí không màu bay lên, gây sủi bọt mạnh.</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="content split">
+        <div class="panel">
+          <div class="eyebrow">TRANG 3</div>
+          <h2 style="font-size:clamp(1.8rem,4vw,3rem);margin-bottom:16px">Dấu hiệu nhận biết phản ứng</h2>
+          <div class="list">
+            <div class="item"><span class="num">1</span><div><strong>Có khí thoát ra</strong><br><span style="color:var(--text2)">Sủi bọt, bốc khói</span></div></div>
+            <div class="item"><span class="num">2</span><div><strong>Có kết tủa xuất hiện</strong><br><span style="color:var(--text2)">Chất rắn không tan xuất hiện</span></div></div>
+            <div class="item"><span class="num">3</span><div><strong>Có màu thay đổi</strong><br><span style="color:var(--text2)">Thay đổi màu dung dịch</span></div></div>
+            <div class="item"><span class="num">4</span><div><strong>Tỏa/thu nhiệt</strong><br><span style="color:var(--text2)">Nhiệt độ thay đổi</span></div></div>
+            <div class="item"><span class="num">5</span><div><strong>Có ánh sáng, tiếng nổ</strong><br><span style="color:var(--text2)">Một số phản ứng đặc biệt</span></div></div>
+          </div>
+        </div>
+        <div class="panel" style="display:grid;place-items:center;gap:20px">
+          <div style="display:flex;gap:30px">
+            <div style="width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,var(--orange),transparent);animation:ping 2s infinite"></div>
+            <div style="width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,var(--pink),transparent);animation:ping 2s infinite .3s"></div>
+            <div style="width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,var(--cyan),transparent);animation:ping 2s infinite .6s"></div>
+          </div>
+          <style>@keyframes ping{0%{transform:scale(.8);opacity:1}75%,100%{transform:scale(1.4);opacity:0}}</style>
+          <p style="color:var(--text2)">Hiệu ứng quan sát trực quan</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="content center">
+        <div>
+          <div class="eyebrow">TRANG 4</div>
+          <h2 style="font-size:clamp(1.8rem,4vw,3rem);margin-bottom:12px">Thí nghiệm 2: Phản ứng kẽm với axit sunfuric</h2>
+          <p class="lead" style="margin:0 auto">Zn + H<sub>2</sub>SO<sub>4</sub> (loãng) → ZnSO<sub>4</sub> + H<sub>2</sub>↑</p>
+        </div>
+        <div class="panel" style="width:min(900px,100%);height:420px;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:40px">
+          <div style="width:160px;height:240px;border:3px solid rgba(148,163,184,.6);border-top:none;border-radius:0 0 18px 18px;overflow:hidden;position:relative">
+            <div style="position:absolute;bottom:0;width:100%;height:65%;background:rgba(167,139,250,.4)"></div>
+            <div style="position:absolute;bottom:65%;left:20px;width:40px;height:60px;background:linear-gradient(180deg,#94a3b8,#64748b);border-radius:4px"></div>
+            <div class="bubbles" style="height:100%"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></div>
+          </div>
+          <div style="position:absolute;top:40px;right:80px;display:flex;flex-direction:column;gap:6px;align-items:center">
+            <div style="width:30px;height:60px;border:2px solid rgba(148,163,184,.6);border-radius:0 0 8px 8px;overflow:hidden">
+              <div style="width:100%;height:100%;background:radial-gradient(circle,rgba(255,255,255,.9),transparent);animation:gas 2s ease-in-out infinite"></div>
+            </div>
+            <p style="font-size:.8rem;color:var(--text2)">Khí H<sub>2</sub></p>
+          </div>
+          <style>@keyframes gas{0%,100%{transform:scale(.9)}50%{transform:scale(1.1)}}</style>
+        </div>
+        <p class="lead" style="margin:0 auto">Có bọt khí không màu, kẽm tan dần, dung dịch trở nên đục hơn.</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="content split">
+        <div class="panel">
+          <div class="eyebrow">TRANG 5</div>
+          <h2 style="font-size:clamp(1.8rem,4vw,3rem);margin-bottom:16px">Phương trình hóa học</h2>
+          <p class="lead" style="margin-bottom:24px">Biểu diễn ngắn gọn quá trình phản ứng bằng công thức hóa học.</p>
+          <div class="list">
+            <div class="item"><span class="num">CTC</span><div><strong>Chất tham gia (chất đầu)</strong><br><span style="color:var(--text2)">Viết bên trái mũi tên</span></div></div>
+            <div class="item"><span class="num">→</span><div><strong>Mũi tên</strong><br><span style="color:var(--text2)">Chiều diễn biến phản ứng</span></div></div>
+            <div class="item"><span class="num">CSP</span><div><strong>Chất sản phẩm (chất tạo thành)</strong><br><span style="color:var(--text2)">Viết bên phải mũi tên</span></div></div>
+            <div class="item"><span class="num">↑ ↓</span><div><strong>Chú thích</strong><br><span style="color:var(--text2)">↑ khí thoát ra, ↓ kết tủa</span></div></div>
+          </div>
+        </div>
+        <div class="panel" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;text-align:center">
+          <div style="font-size:clamp(1.4rem,3vw,2.4rem);font-weight:700">
+            <span style="color:var(--cyan)">2H<sub>2</sub></span> + <span style="color:var(--orange)">O<sub>2</sub></span> 
+            <span style="color:var(--teal);margin:0 20px">→</span> 
+            <span style="color:var(--violet)">2H<sub>2</sub>O</span>
+          </div>
+          <p style="color:var(--text2)">2 phân tử hidro + 1 phân tử oxi → 2 phân tử nước</p>
+          <div style="display:flex;gap:20px">
+            <svg width="80" height="80" viewBox="0 0 40 40"><circle cx="20" cy="20" r="12" fill="none" stroke="var(--cyan)" stroke-width="2"/><line x1="20" y1="8" x2="20" y2="4" stroke="var(--cyan)" stroke-width="2"/><line x1="20" y1="32" x2="20" y2="36" stroke="var(--cyan)" stroke-width="2"/><line x1="8" y1="20" x2="4" y2="20" stroke="var(--cyan)" stroke-width="2"/><line x1="32" y1="20" x2="36" y2="20" stroke="var(--cyan)" stroke-width="2"/></svg>
+            <svg width="80" height="80" viewBox="0 0 40 40"><circle cx="15" cy="20" r="8" fill="none" stroke="var(--orange)" stroke-width="2"/><circle cx="25" cy="20" r="8" fill="none" stroke="var(--orange)" stroke-width="2"/><animateTransform attributeName="transform" type="rotate" values="0 20 20;360 20 20" dur="8s" repeatCount="indefinite"/></svg>
+            <svg width="80" height="80" viewBox="0 0 40 40"><circle cx="20" cy="16" r="6" fill="var(--violet)" opacity=".7"/><ellipse cx="20" cy="26" rx="10" ry="6" fill="var(--violet)" opacity=".4"/></svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="content center">
+        <div>
+          <div class="eyebrow">TRANG 6</div>
+          <h2 style="font-size:clamp(1.8rem,4vw,3rem);margin-bottom:12px">Thí nghiệm 3: Phenolphtalein với dung dịch bazơ</h2>
+          <p class="lead" style="margin:0 auto">Nhận biết tính bazơ bằng chỉ thị màu</p>
+        </div>
+        <div class="panel" style="width:min(900px,100%);height:420px;display:flex;align-items:center;justify-content:center;gap:40px">
+          <div style="text-align:center">
+            <div style="width:100px;height:160px;border:3px solid rgba(148,163,184,.6);border-top:none;border-radius:0 0 14px 14px;overflow:hidden;position:relative;margin:0 auto">
+              <div style="position:absolute;bottom:0;width:100%;height:60%;background:rgba(244,114,182,.8);animation:color 3s ease-in-out infinite alternate"></div>
+            </div>
+            <p style="margin-top:10px;color:var(--text2)">NaOH + Phenolphtalein<br>Đỏ hồng</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:20px;align-items:center">
+            <div style="width:4px;height:60px;background:linear-gradient(180deg,var(--cyan),transparent)"></div>
+            <div style="padding:12px 20px;border-radius:12px;border:1px solid var(--border);background:rgba(34,211,238,.1)">Giọt chỉ thị</div>
+            <div style="width:4px;height:60px;background:linear-gradient(180deg,transparent,var(--pink))"></div>
+          </div>
+          <div style="text-align:center">
+            <div style="width:100px;height:160px;border:3px solid rgba(148,163,184,.6);border-top:none;border-radius:0 0 14px 14px;overflow:hidden;margin:0 auto">
+              <div style="width:100%;height:60%;background:rgba(226,232,240,.4)"></div>
+            </div>
+            <p style="margin-top:10px;color:var(--text2)">Dung dịch trung tính<br>Không màu</p>
+          </div>
+        </div>
+        <style>@keyframes color{from{background:rgba(244,114,182,.6)}to{background:rgba(244,114,182,1)}}</style>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="content split">
+        <div class="panel">
+          <div class="eyebrow">TRANG 7</div>
+          <h2 style="font-size:clamp(1.8rem,4vw,3rem);margin-bottom:16px">Ứng dụng phản ứng hóa học</h2>
+          <div class="list">
+            <div class="item"><span class="num">🔥</span><div><strong>Đốt cháy nhiên liệu</strong><br><span style="color:var(--text2)">Xăng, gas cung cấp năng lượng</span></div></div>
+            <div class="item"><span class="num">🧪</span><div><strong>Sản xuất phân bón</strong><br><span style="color:var(--text2)">Tăng năng suất cây trồng</span></div></div>
+            <div class="item"><span class="num">🏭</span><div><strong>Công nghiệp hóa chất</strong><br><span style="color:var(--text2)">Sản xuất vải, nhựa, thuốc</span></div></div>
+            <div class="item"><span class="num">🍞</span><div><strong>Trong cuộc sống</strong><br><span style="color:var(--text2)">Men bánh mì, ủ chua, nấu ăn</span></div></div>
+            <div class="item"><span class="num">⚡</span><div><strong>Nguồn năng lượng mới</strong><br><span style="color:var(--text2)">Pin, nhiên liệu hydro</span></div></div>
+          </div>
+        </div>
+        <div class="panel" style="display:grid;place-items:center">
+          <svg width="320" height="320" viewBox="0 0 200 200">
+            <path d="M100 40 L110 70 L140 70 L116 88 L126 118 L100 100 L74 118 L84 88 L60 70 L90 70 Z" fill="none" stroke="var(--orange)" stroke-width="3">
+              <animate attributeName="stroke-dasharray" values="0 200;200 0" dur="3s" repeatCount="indefinite"/>
+            </path>
+            <circle cx="100" cy="100" r="30" fill="none" stroke="var(--cyan)" stroke-width="2" opacity=".6">
+              <animate attributeName="r" values="30;40;30" dur="3s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values=".6;0;.6" dur="3s" repeatCount="indefinite"/>
+            </circle>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="content split">
+        <div class="panel">
+          <div class="eyebrow">TRANG 8</div>
+          <h2 style="font-size:clamp(1.8rem,4vw,3rem);margin-bottom:16px">An toàn trong phòng thí nghiệm</h2>
+          <div class="list">
+            <div class="item"><span class="num">✓</span><div><strong>Đeo đồ bảo hộ</strong><br><span style="color:var(--text2)">Kính, áo blouse, găng tay</span></div></div>
+            <div class="item"><span class="num">✓</span><div><strong>Tuân thủ hướng dẫn</strong><br><span style="color:var(--text2)">Chỉ làm theo giáo viên chỉ dẫn</span></div></div>
+            <div class="item"><span class="num">✓</span><div><strong>Xử lý axit, bazơ cẩn thận</strong><br><span style="color:var(--text2)">Luôn đổ axit vào nước</span></div></div>
+            <div class="item"><span class="num">✓</span><div><strong>Không nếm, ngửi trực tiếp</strong><br><span style="color:var(--text2)">Dùng tay quạt nhẹ đưa khí</span></div></div>
+            <div class="item"><span class="num">✓</span><div><strong>Vệ sinh sau thí nghiệm</strong><br><span style="color:var(--text2)">Rửa tay kỹ sau khi thực hành</span></div></div>
+          </div>
+        </div>
+        <div class="panel" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px">
+          <div style="width:120px;height:160px;border:3px solid var(--teal);border-radius:20px 20px 60px 60px;position:relative;overflow:hidden">
+            <div style="position:absolute;top:30px;left:50%;transform:translateX(-50%);width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,rgba(94,234,212,.4),transparent);animation:pulse 2s infinite"></div>
+            <div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:40px;height:8px;border-radius:4px;background:var(--teal)"></div>
+          </div>
+          <p style="color:var(--teal);font-weight:700;letter-spacing:.2em;text-transform:uppercase">AN TOÀN LÀ TRÊN HẾT</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="content split">
+        <div class="panel">
+          <div class="eyebrow">TRANG 9</div>
+          <h2 style="font-size:clamp(1.8rem,4vw,3rem);margin-bottom:16px">Bài tập vận dụng</h2>
+          <div class="list">
+            <div class="item"><span class="num">Câu 1</span><div><strong>Nhận biết</strong><br><span style="color:var(--text2)">Nêu dấu hiệu nhận biết phản ứng giữa Fe với CuSO<sub>4</sub></span></div></div>
+            <div class="item"><span class="num">Câu 2</span><div><strong>Viết PTHH</strong><br><span style="color:var(--text2)">Viết phương trình phản ứng giữa Mg với O<sub>2</sub></span></div></div>
+            <div class="item"><span class="num">Câu 3</span><div><strong>Quan sát</strong><br><span style="color:var(--text2)">Giải thích hiện tượng khi nhỏ vài giọt phenolphtalein vào NaOH</span></div></div>
+          </div>
+        </div>
+        <div class="panel" style="display:grid;place-items:center;text-align:center;gap:20px">
+          <div style="font-size:clamp(3rem,8vw,6rem);font-weight:700;background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;color:transparent">?</div>
+          <p class="lead">Hãy quan sát, suy luận và giải thích hiện tượng</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="content center">
+        <div>
+          <div class="eyebrow">TRANG 10</div>
+          <h2 style="font-size:clamp(2rem,6vw,4.5rem);margin-bottom:16px">TỔNG KẾT</h2>
+          <p class="lead" style="margin:0 auto 40px">Phản ứng hóa học giúp ta hiểu thế giới xung quanh - từ những điều đơn giản đến ứng dụng lớn lao</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;width:min(1000px,100%)">
+          <div class="panel"><h3 style="color:var(--teal);margin-bottom:8px">Quan sát</h3><p style="color:var(--text2)">Chú ý dấu hiệu để nhận biết phản ứng</p></div>
+          <div class="panel"><h3 style="color:var(--cyan);margin-bottom:8px">Mô tả</h3><p style="color:var(--text2)">Diễn đạt chính xác hiện tượng quan sát</p></div>
+          <div class="panel"><h3 style="color:var(--violet);margin-bottom:8px">Giải thích</h3><p style="color:var(--text2)">Liên hệ với kiến thức để giải thích</p></div>
+          <div class="panel"><h3 style="color:var(--orange);margin-bottom:8px">Ứng dụng</h3><p style="color:var(--text2)">Vận dụng vào thực tiễn cuộc sống</p></div>
+        </div>
+        <button class="btn" onclick="go(0)">← Quay về trang đầu</button>
+        <p style="margin-top:20px;color:var(--text2)">Cảm ơn quý thầy cô và các bạn đã lắng nghe!</p>
+      </div>
+    </section>
+  </main>
+  <div class="hud">
+    <button class="nav" onclick="go(idx-1)">←</button>
+    <div class="dots" id="dots"></div>
+    <button class="nav" onclick="go(idx+1)">→</button>
+    <span class="counter"><span id="cur">01</span>/10</span>
+  </div>
+  <script>
+    const slides=document.querySelectorAll('.slide'),dots=document.getElementById('dots'),bar=document.getElementById('bar'),cur=document.getElementById('cur');let idx=0;
+    slides.forEach((_,i)=>{const d=document.createElement('button');d.className='dot'+(i?'':' active');d.onclick=()=>go(i);dots.appendChild(d);});
+    function go(n){if(n<0||n>=slides.length)return;slides[idx].classList.remove('active');dots.children[idx].classList.remove('active');idx=n;slides[idx].classList.add('active');dots.children[idx].classList.add('active');bar.style.width=((idx+1)/10*100)+'%';cur.textContent=String(idx+1).padStart(2,'0');}
+    document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(idx+1);if(e.key==='ArrowLeft')go(idx-1);if(e.key==='f'||e.key==='F')toggleFS();});
+    function toggleFS(){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}
+    document.querySelectorAll('.panel').forEach(p=>{p.addEventListener('mousemove',e=>{const r=p.getBoundingClientRect();p.style.setProperty('--mx',e.clientX-r.left+'px');p.style.setProperty('--my',e.clientY-r.top+'px');});});
+    const c=document.getElementById('particles'),ctx=c.getContext('2d');let w,h,pts=[];function rs(){w=c.width=innerWidth;h=c.height=innerHeight;}rs();addEventListener('resize',rs);
+    for(let i=0;i<60;i++)pts.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4});
+    function anim(){ctx.clearRect(0,0,w,h);ctx.fillStyle='rgba(34,211,238,.4)';pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,1.2,0,Math.PI*2);ctx.fill();});requestAnimationFrame(anim);}anim();
+  </script>
+</body>
+</html>
